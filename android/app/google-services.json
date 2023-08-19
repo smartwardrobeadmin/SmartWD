@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "369279323334",
+    "firebase_url": "https://smart-wd-default-rtdb.firebaseio.com",
+    "project_id": "smart-wd",
+    "storage_bucket": "smart-wd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369279323334:android:cf69c6548953d8def99bc7",
+        "android_client_info": {
+          "package_name": "com.smartwd.smart_wd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "369279323334-fhb5vo8270k7beko5socdu4q60pb7t1s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA07A-tc4ayDTapLhUtzXuakjcNz-audYI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "369279323334-fhb5vo8270k7beko5socdu4q60pb7t1s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
