@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:async/async.dart';
+import 'package:smart_wd/models/ai_model.dart';
 
 String txt = "";
 String txt1 = "Upload or take an image";
@@ -40,13 +41,13 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
         case TaskState.running:
           final progress =
               100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
-          print("Upload is $progress% complete.");
+          debugPrint("Upload is $progress% complete.");
           break;
         case TaskState.paused:
-          print("Upload is paused.");
+          debugPrint("Upload is paused.");
           break;
         case TaskState.canceled:
-          print("Upload was canceled");
+          debugPrint("Upload was canceled");
           break;
         case TaskState.error:
           // Handle unsuccessful uploads
@@ -66,7 +67,8 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
 
     String base = "https://smartwd-model.onrender.com";
 
-    var uri = Uri.parse(base + '/analyze');
+    var uri = Uri.parse('$base/analyze');
+    debugPrint('making request');
 
     var request = http.MultipartRequest("POST", uri);
     var multipartFile = http.MultipartFile('file', stream, length,
@@ -75,18 +77,19 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
 
     request.files.add(multipartFile);
     var response = await request.send();
-    print(response.statusCode);
+    debugPrint(response.statusCode.toString());
     uploadToStorage(imageFile);
     response.stream.transform(utf8.decoder).listen((value) {
-      print(value);
+      debugPrint(value);
       int l = value.length;
-      txt = value;
+      AnalyzeModel responseTxt = AnalyzeModel.fromJson(jsonDecode(value));
+      txt = 'Type: ${responseTxt.result}\nColor: ${responseTxt.color}';
 
       setState(() {});
     });
   }
 
-  void image_picker(int a) async {
+  void imagePicker(int a) async {
     txt1 = "";
     setState(() {});
     debugPrint("Image Picker Activated");
@@ -122,49 +125,47 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.exit_to_app))
           ]),
-      body: Container(
-        child: Center(
-          child: Column(
-            children: <Widget>[
-              img == null
-                  ? Text(
-                      txt1,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 32.0,
-                      ),
-                    )
-                  : Image.file(img!,
-                      height: MediaQuery.of(context).size.height * 0.6,
-                      width: MediaQuery.of(context).size.width * 0.8),
-              Text(
-                txt,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 32.0,
-                ),
-              )
-            ],
-          ),
+      body: Center(
+        child: Column(
+          children: <Widget>[
+            img == null
+                ? Text(
+                    txt1,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 32.0,
+                    ),
+                  )
+                : Image.file(img!,
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    width: MediaQuery.of(context).size.width * 0.8),
+            Text(
+              txt,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 32.0,
+              ),
+            )
+          ],
         ),
       ),
       floatingActionButton: Stack(
         children: <Widget>[
           Align(
-              alignment: Alignment(1.0, 1.0),
+              alignment: const Alignment(1.0, 1.0),
               child: FloatingActionButton(
                 onPressed: () {
-                  image_picker(0);
+                  imagePicker(0);
                 },
-                child: Icon(Icons.camera_alt),
+                child: const Icon(Icons.camera_alt),
               )),
           Align(
-              alignment: Alignment(1.0, 0.8),
+              alignment: const Alignment(1.0, 0.8),
               child: FloatingActionButton(
                   onPressed: () {
-                    image_picker(1);
+                    imagePicker(1);
                   },
-                  child: Icon(Icons.file_upload))),
+                  child: const Icon(Icons.file_upload))),
         ],
       ),
     );

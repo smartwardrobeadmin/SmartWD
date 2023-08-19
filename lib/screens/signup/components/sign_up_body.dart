@@ -17,6 +17,7 @@ class _SignUpBodyScreenState extends State<SignUpBodyScreen> {
   FlowController flowController = Get.put(FlowController());
 
   late int _currentFlow;
+
   @override
   void initState() {
     _currentFlow = FlowController().currentFlow;
@@ -25,56 +26,60 @@ class _SignUpBodyScreenState extends State<SignUpBodyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        backgroundColor: HexColor("#FFB133"),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Stack(
-              children: [
-                Transform.translate(
-                    offset: const Offset(0, -200),
-                    child: Image.asset(
-                      'assets/Images/login_background.png',
-                      scale: 1,
-                    )
-                ),
-                Transform.translate(
-                  offset: const Offset(10, -100),
-                  child: Text(
-                    "Register",
-                    style: GoogleFonts.poppins(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                Container(
-                    height: 600,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: HexColor("#ffffff"),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(40),
-                        topRight: Radius.circular(40),
+    Size size = MediaQuery.sizeOf(context);
+    return Container(
+      color: HexColor("#FFB133"),
+      child: SingleChildScrollView(
+        child: SizedBox(
+          height: size.height,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Stack(
+                children: [
+                  Transform.translate(
+                      offset: const Offset(0, -200),
+                      child: Image.asset(
+                        'assets/Images/login_background.png',
+                        scale: 1,
+                      )),
+                  Transform.translate(
+                    offset: const Offset(10, -100),
+                    child: Text(
+                      "Register",
+                      style: GoogleFonts.poppins(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    child: GetBuilder<FlowController>(
-                      builder: (context) {
-                        if (flowController.currentFlow == 1) {
-                          return const SignUpOne();
-                        } else {
-                          return const SignUpTwo();
-                        }
-                      },
-                    ))
-              ],
-            ),
-          ],
-        )
+                  ),
+                  Container(
+                      height: 600,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: HexColor("#ffffff"),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(40),
+                          topRight: Radius.circular(40),
+                        ),
+                      ),
+                      child: SingleChildScrollView(
+                        child: GetBuilder<FlowController>(
+                          builder: (context) {
+                            if (flowController.currentFlow == 1) {
+                              return const SignUpOne();
+                            } else {
+                              return const SignUpTwo();
+                            }
+                          },
+                        ),
+                      ))
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
