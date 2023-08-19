@@ -16,6 +16,8 @@ class _HomeScreenState extends State<HomeScreen> {
     FirebaseAuth.instance.signOut();
   }
 
+  Color color = const Color(0xFF8f806d);
+
   @override
   Widget build(BuildContext context) {
     return const SafeArea(

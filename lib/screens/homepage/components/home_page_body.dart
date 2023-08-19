@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:get/get.dart';
+import 'package:smart_wd/constants/colors.dart';
+import 'package:smart_wd/screens/login/components/auth_page.dart';
 import '../../../screens/enterclothes/enter_clothes.dart';
 import 'package:smart_wd/controller/flow_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,23 +23,61 @@ class HomeScreenBody extends StatefulWidget {
 class _HomeScreenBodyState extends State<HomeScreenBody> {
   final user = FirebaseAuth.instance.currentUser!;
   FlowController flowController = Get.put(FlowController());
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  StreamSubscription? userDocSubscription;
+  Map? userData = {};
+  bool isLoading = true;
+  List clothes = [];
 
+  late DocumentReference<Map<String, dynamic>> ref;
+
+  Future<void> getData() async {
+    ref = firestore.collection('user').doc(AuthPage.uid);
+    var snapshot = ref.snapshots();
+    userDocSubscription = snapshot.listen((doc) {
+      setState(() {
+        userData = doc.data();
+      });
+    });
+    await snapshot.first;
+    if (userData != null) {
+      if (userData!.containsKey('clothes')) {
+        for (var key in userData!['clothes'].keys) {
+          Map map = userData!['clothes'][key];
+          map['path'] = key;
+          clothes.add(map);
+        }
+      }
+    }
+  }
 
   void signUserOut() {
     FirebaseAuth.instance.signOut();
   }
 
   @override
+  void initState() {
+    super.initState();
+    initFn();
+  }
+
+  Future<void> initFn() async {
+    await Future.delayed(const Duration(seconds: 0))
+        .then((value) async => await getData())
+        .then((value) => setState(() => isLoading = false));
+  }
+
+  @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: HexColor("#FFB133"),
+      statusBarColor: AppColors.defaultYellow,
       statusBarBrightness: Brightness.dark,
     ));
     return Scaffold(
         appBar: AppBar(
-          systemOverlayStyle: const SystemUiOverlayStyle(
+          systemOverlayStyle: SystemUiOverlayStyle(
             // Status bar color
-            statusBarColor: Colors.red,
+            statusBarColor: AppColors.defaultYellow,
           ),
           centerTitle: false,
           backgroundColor: HexColor("#FFB133"),
@@ -82,14 +125,83 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                     fontSize: 35,
                     color: Colors.black,
                   ))),
-          const SizedBox(
-            height: 300,
+          Expanded(
+            child: isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.defaultYellow))
+                : RefreshIndicator(
+                    color: AppColors.defaultYellow,
+                    onRefresh: () async {
+                      setState(() {
+                        isLoading = true;
+                        clothes.clear();
+                      });
+                      await initFn();
+                    },
+                    child: ListView.builder(
+                        itemCount: clothes.length,
+                        itemBuilder: (context, i) {
+                          Map item = clothes[i];
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.grey[900],
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Image.network(
+                                    item['imageUrl'],
+                                    width: 80,
+                                    height: 80,
+                                  ),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        "Type: ${item['type']}",
+                                        style: const TextStyle(
+                                            color: Colors.white),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        "Color: ${item['color']}",
+                                        style: const TextStyle(
+                                            color: Colors.white),
+                                      )
+                                    ],
+                                  ),
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        value: item['temp'] / 100,
+                                        color: Colors.white,
+                                      ),
+                                      Text(
+                                        "${item['temp']}%",
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                  ),
           ),
           MyButton2(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (builder) => const EnterClothesScreen()),
+                MaterialPageRoute(
+                    builder: (builder) => const EnterClothesScreen()),
               );
             },
             buttonText: 'Enter New Clothes',
@@ -102,7 +214,6 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
             onPressed: () {},
             buttonText: 'Return Clothes',
           )
-        ])
-    );
+        ]));
   }
 }

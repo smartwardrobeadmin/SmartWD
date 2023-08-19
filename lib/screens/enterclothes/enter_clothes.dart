@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,6 +26,7 @@ class EnterClothesScreen extends StatefulWidget {
 
 class EnterClothesScreenState extends State<EnterClothesScreen> {
   String imagePath = '';
+  String imageUrl = '';
   File? img;
 
   Future<void> uploadToStorage(File imageFile) async {
@@ -39,31 +39,36 @@ class EnterClothesScreenState extends State<EnterClothesScreen> {
     var time = DateTime.now().millisecondsSinceEpoch.toString();
     // Upload file and metadata to the path 'images/mountains.jpg'
     imagePath = "images/$time.jpg";
-    final uploadTask = storageRef.child(imagePath).putFile(imageFile, metadata);
+    await Future.delayed(const Duration(milliseconds: 0)).then((value) async =>
+        await storageRef.child(imagePath).putFile(imageFile, metadata).then(
+            (p0) async {
+              imageUrl = await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
+              debugPrint("url is $imageUrl");
+            }));
 
     // Listen for state changes, errors, and completion of the upload.
-    uploadTask.snapshotEvents.listen((TaskSnapshot taskSnapshot) {
-      switch (taskSnapshot.state) {
-        case TaskState.running:
-          final progress =
-              100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
-          debugPrint("Upload is $progress% complete.");
-          break;
-        case TaskState.paused:
-          Get.snackbar('Pause', "Upload is paused.");
-          break;
-        case TaskState.canceled:
-          Get.snackbar('Canceled', "Upload was canceled");
-          break;
-        case TaskState.error:
-          Get.snackbar('Error', "Upload had an error");
-          break;
-        case TaskState.success:
-          Get.snackbar('Success', "Upload was Success");
-          // ...
-          break;
-      }
-    });
+    // uploadTask.snapshotEvents.listen((TaskSnapshot taskSnapshot) {
+    //   switch (taskSnapshot.state) {
+    //     case TaskState.running:
+    //       final progress =
+    //           100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
+    //       debugPrint("Upload is $progress% complete.");
+    //       break;
+    //     case TaskState.paused:
+    //       Get.snackbar('Pause', "Upload is paused.");
+    //       break;
+    //     case TaskState.canceled:
+    //       Get.snackbar('Canceled', "Upload was canceled");
+    //       break;
+    //     case TaskState.error:
+    //       Get.snackbar('Error', "Upload had an error");
+    //       break;
+    //     case TaskState.success:
+    //       Get.snackbar('Success', "Upload was Success");
+    //       // ...
+    //       break;
+    //   }
+    // });
   }
 
   // The function which will upload the image as a file
@@ -86,45 +91,60 @@ class EnterClothesScreenState extends State<EnterClothesScreen> {
     var response = await request.send();
     debugPrint(response.statusCode.toString());
 
-    await Future.delayed(const Duration(milliseconds: 0)).then((value) async =>
-        await uploadToStorage(imageFile).then(
-            (value) => response.stream.transform(utf8.decoder).listen((value)async {
-                  debugPrint(value);
-                  // int l = value.length;
-                  AnalyzeModel responseTxt =
-                      AnalyzeModel.fromJson(jsonDecode(value));
-                  txt =
-                      'Type: ${responseTxt.result}\nColor: ${responseTxt.color}';
+    await uploadToStorage(imageFile).then((value) =>
+        response.stream.transform(utf8.decoder).listen((value) async {
+          debugPrint(value);
+          // int l = value.length;
+          AnalyzeModel responseTxt = AnalyzeModel.fromJson(jsonDecode(value));
+          txt = 'Type: ${responseTxt.result}\nColor: ${responseTxt.color}';
 
-                  /// color analysis
-                  Color color = HexColor(responseTxt.color ?? '#000000');
-                  var grayscale = (0.299 * color.red) +
-                      (0.587 * color.green) +
-                      (0.114 * color.blue);
+          /// color analysis
+          Color color = HexColor(responseTxt.color ?? '#000000');
+          var grayscale = (0.299 * color.red) +
+              (0.587 * color.green) +
+              (0.114 * color.blue);
 
-                  await createDataInFireStore(
-                      imagePath: imagePath,
-                      type: responseTxt.result ?? 'Unknown',
-                      color: responseTxt.color ?? '#000000',
-                      temp: (grayscale ~/ 1.28));
-                  setState(() {});
-                })));
+          await createDataInFireStore(
+              imagePath: imagePath,
+              imageUrl: imageUrl,
+              type: responseTxt.result ?? 'Unknown',
+              color: responseTxt.color ?? '#000000',
+              temp: (grayscale ~/ 2.25));
+          setState(() {});
+        }));
   }
 
   Future<void> createDataInFireStore({
     required String imagePath,
+    required String imageUrl,
     required String type,
     required String color,
     required int temp,
   }) async {
-    await FirebaseFirestore.instance.collection('user').doc(AuthPage.uid).update({
-      'clothes': {
-        imagePath: {
-          'type': type,
-          'color': color,
-          'temp': temp,
-        }
+    final ref = FirebaseFirestore.instance.collection('user').doc(AuthPage.uid);
+    Map data = {};
+    var snapshot = ref.snapshots();
+    var userDocSubscription = snapshot.listen((doc) {
+      if (doc.data() != null) {
+        data = doc.data()!;
       }
+    });
+    await snapshot.first;
+    Map clothesMap = {};
+    if(data.containsKey('clothes')){
+      clothesMap = data['clothes'];
+    }
+    clothesMap[imagePath] = {
+      'imageUrl': imageUrl,
+      'type': type,
+      'color': color,
+      'temp': temp,
+    };
+    await FirebaseFirestore.instance
+        .collection('user')
+        .doc(AuthPage.uid)
+        .update({
+      'clothes': clothesMap,
     });
   }
 
