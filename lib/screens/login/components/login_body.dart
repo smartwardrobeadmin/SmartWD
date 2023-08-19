@@ -17,6 +17,7 @@ class LoginBodyScreen extends StatefulWidget {
 class _LoginBodyScreenState extends State<LoginBodyScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
   void signUserIn() async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -56,11 +57,10 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        backgroundColor: HexColor("#FFB133"),
-        body: Column(
+    return Container(
+      color: HexColor("#FFB133"),
+      child: SingleChildScrollView(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Stack(
@@ -70,8 +70,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                     child: Image.asset(
                       'assets/Images/login_background_login.png',
                       scale: 1,
-                    )
-                ),
+                    )),
                 Container(
                   height: 535,
                   width: double.infinity,
@@ -112,8 +111,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                 prefixIcon: const Icon(Icons.mail_outline),
                               ),
                               Padding(
-                                padding:
-                                const EdgeInsets.fromLTRB(8, 0, 0, 0),
+                                padding: const EdgeInsets.fromLTRB(8, 0, 0, 0),
                                 child: Text(
                                   _errorMessage,
                                   style: GoogleFonts.poppins(
@@ -152,8 +150,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                 height: 12,
                               ),
                               Padding(
-                                padding:
-                                const EdgeInsets.fromLTRB(35, 0, 0, 0),
+                                padding: const EdgeInsets.fromLTRB(35, 0, 0, 0),
                                 child: Row(
                                   children: [
                                     Text("Don't have an account?",
@@ -173,7 +170,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                          const SignUpScreen(),
+                                              const SignUpScreen(),
                                         ),
                                       ),
                                     ),
