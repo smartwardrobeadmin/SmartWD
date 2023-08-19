@@ -89,7 +89,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => EnterClothesScreen()),
+                MaterialPageRoute(builder: (builder) => const EnterClothesScreen()),
               );
             },
             buttonText: 'Enter New Clothes',

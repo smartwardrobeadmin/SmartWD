@@ -1,10 +1,12 @@
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:smart_wd/components/my_button.dart';
 import 'package:smart_wd/components/my_textfield.dart';
+import 'package:smart_wd/screens/homepage/home_page.dart';
 import 'package:smart_wd/screens/signup/sign_up.dart';
 
 class LoginBodyScreen extends StatefulWidget {
@@ -22,8 +24,9 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailController.text, password: passwordController.text);
+      Navigator.push(context, MaterialPageRoute(builder: (builder)=> HomeScreen()));
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.code)));
+      Get.snackbar('Error Happened', e.code);
     }
   }
 

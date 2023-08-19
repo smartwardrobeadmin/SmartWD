@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,20 +11,25 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:async/async.dart';
+import 'package:smart_wd/constants/colors.dart';
 import 'package:smart_wd/models/ai_model.dart';
+import 'package:smart_wd/screens/login/components/auth_page.dart';
 
 String txt = "";
 String txt1 = "Upload or take an image";
 
 class EnterClothesScreen extends StatefulWidget {
+  const EnterClothesScreen({super.key});
+
   @override
-  _EnterClothesScreenState createState() => _EnterClothesScreenState();
+  EnterClothesScreenState createState() => EnterClothesScreenState();
 }
 
-class _EnterClothesScreenState extends State<EnterClothesScreen> {
+class EnterClothesScreenState extends State<EnterClothesScreen> {
+  String imagePath = '';
   File? img;
 
-  void uploadToStorage(File imageFile) {
+  Future<void> uploadToStorage(File imageFile) async {
     // Create the file metadata
     final metadata = SettableMetadata(contentType: "image/jpeg");
 
@@ -31,9 +38,8 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
 
     var time = DateTime.now().millisecondsSinceEpoch.toString();
     // Upload file and metadata to the path 'images/mountains.jpg'
-    final uploadTask = storageRef
-        .child("images/$time.jpg")
-        .putFile(imageFile, metadata);
+    imagePath = "images/$time.jpg";
+    final uploadTask = storageRef.child(imagePath).putFile(imageFile, metadata);
 
     // Listen for state changes, errors, and completion of the upload.
     uploadTask.snapshotEvents.listen((TaskSnapshot taskSnapshot) {
@@ -44,16 +50,16 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
           debugPrint("Upload is $progress% complete.");
           break;
         case TaskState.paused:
-          debugPrint("Upload is paused.");
+          Get.snackbar('Pause', "Upload is paused.");
           break;
         case TaskState.canceled:
-          debugPrint("Upload was canceled");
+          Get.snackbar('Canceled', "Upload was canceled");
           break;
         case TaskState.error:
-          // Handle unsuccessful uploads
+          Get.snackbar('Error', "Upload had an error");
           break;
         case TaskState.success:
-          // Handle successful uploads on complete
+          Get.snackbar('Success', "Upload was Success");
           // ...
           break;
       }
@@ -62,6 +68,7 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
 
   // The function which will upload the image as a file
   void upload(File imageFile) async {
+    // ignore: deprecated_member_use
     var stream = http.ByteStream(DelegatingStream.typed(imageFile.openRead()));
     var length = await imageFile.length();
 
@@ -78,14 +85,46 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
     request.files.add(multipartFile);
     var response = await request.send();
     debugPrint(response.statusCode.toString());
-    uploadToStorage(imageFile);
-    response.stream.transform(utf8.decoder).listen((value) {
-      debugPrint(value);
-      int l = value.length;
-      AnalyzeModel responseTxt = AnalyzeModel.fromJson(jsonDecode(value));
-      txt = 'Type: ${responseTxt.result}\nColor: ${responseTxt.color}';
 
-      setState(() {});
+    await Future.delayed(const Duration(milliseconds: 0)).then((value) async =>
+        await uploadToStorage(imageFile).then(
+            (value) => response.stream.transform(utf8.decoder).listen((value)async {
+                  debugPrint(value);
+                  // int l = value.length;
+                  AnalyzeModel responseTxt =
+                      AnalyzeModel.fromJson(jsonDecode(value));
+                  txt =
+                      'Type: ${responseTxt.result}\nColor: ${responseTxt.color}';
+
+                  /// color analysis
+                  Color color = HexColor(responseTxt.color ?? '#000000');
+                  var grayscale = (0.299 * color.red) +
+                      (0.587 * color.green) +
+                      (0.114 * color.blue);
+
+                  await createDataInFireStore(
+                      imagePath: imagePath,
+                      type: responseTxt.result ?? 'Unknown',
+                      color: responseTxt.color ?? '#000000',
+                      temp: (grayscale ~/ 1.28));
+                  setState(() {});
+                })));
+  }
+
+  Future<void> createDataInFireStore({
+    required String imagePath,
+    required String type,
+    required String color,
+    required int temp,
+  }) async {
+    await FirebaseFirestore.instance.collection('user').doc(AuthPage.uid).update({
+      'clothes': {
+        imagePath: {
+          'type': type,
+          'color': color,
+          'temp': temp,
+        }
+      }
     });
   }
 
@@ -94,11 +133,11 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
     setState(() {});
     debugPrint("Image Picker Activated");
     if (a == 0) {
-      XFile? ximg = await ImagePicker().pickImage(source: ImageSource.camera);
-      img = File(ximg!.path);
+      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.camera);
+      img = File(xImg!.path);
     } else {
-      XFile? ximg = await ImagePicker().pickImage(source: ImageSource.gallery);
-      img = File(ximg!.path);
+      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.gallery);
+      img = File(xImg!.path);
     }
 
     txt = "Analysing...";
@@ -111,12 +150,12 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          systemOverlayStyle: const SystemUiOverlayStyle(
+          systemOverlayStyle: SystemUiOverlayStyle(
             // Status bar color
-            statusBarColor: Colors.red,
+            statusBarColor: AppColors.defaultYellow,
           ),
           centerTitle: false,
-          backgroundColor: HexColor("#FFB133"),
+          backgroundColor: AppColors.defaultYellow,
           title: Text('Enter Clothes',
               style: GoogleFonts.poppins(
                 fontSize: 30,
@@ -154,6 +193,8 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
           Align(
               alignment: const Alignment(1.0, 1.0),
               child: FloatingActionButton(
+                heroTag: 'upload',
+                backgroundColor: AppColors.defaultYellow,
                 onPressed: () {
                   imagePicker(0);
                 },
@@ -162,6 +203,8 @@ class _EnterClothesScreenState extends State<EnterClothesScreen> {
           Align(
               alignment: const Alignment(1.0, 0.8),
               child: FloatingActionButton(
+                  heroTag: 'camera pick',
+                  backgroundColor: AppColors.defaultYellow,
                   onPressed: () {
                     imagePicker(1);
                   },

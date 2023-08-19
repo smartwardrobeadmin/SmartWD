@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:smart_wd/screens/homepage/home_page.dart';
 
 import 'package:smart_wd/screens/login/login.dart';
 // ignore: unused_import
@@ -219,8 +220,9 @@ class _SignUpOneState extends State<SignUpOne> {
                           if (isRegistered) {
                             Get.snackbar("Success", "User Registered");
                             signUpController.postSignUpDetails();
+                            Navigator.push(context, MaterialPageRoute(builder: (builder)=> HomeScreen()));
                           } else {
-                            Get.snackbar("Error", "Please fill all the fields");
+                            Get.snackbar("Error", "Please fill all the fields with valid data");
                           }
                         }
                       }),
