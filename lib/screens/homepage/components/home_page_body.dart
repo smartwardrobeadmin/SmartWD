@@ -53,6 +53,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
 
   void signUserOut() {
     FirebaseAuth.instance.signOut();
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (builder) => const AuthPage()), (route) => false);
   }
 
   @override

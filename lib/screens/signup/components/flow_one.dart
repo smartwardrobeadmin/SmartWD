@@ -220,7 +220,8 @@ class _SignUpOneState extends State<SignUpOne> {
                           if (isRegistered) {
                             Get.snackbar("Success", "User Registered");
                             signUpController.postSignUpDetails();
-                            Navigator.push(context, MaterialPageRoute(builder: (builder)=> HomeScreen()));
+                            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (builder)=> HomeScreen()), (route) => false,);
+
                           } else {
                             Get.snackbar("Error", "Please fill all the fields with valid data");
                           }

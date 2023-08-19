@@ -24,7 +24,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailController.text, password: passwordController.text);
-      Navigator.push(context, MaterialPageRoute(builder: (builder)=> HomeScreen()));
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (builder)=> HomeScreen()), (route) => false,);
     } on FirebaseAuthException catch (e) {
       Get.snackbar('Error Happened', e.code);
     }

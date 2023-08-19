@@ -174,10 +174,12 @@ class _SignUpTwoState extends State<SignUpTwo> {
                       if (signUpController.mobileNumber != null &&
                           signUpController.name != null &&
                           signUpController.age != null) {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const HomeScreen()));
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (builder) => const HomeScreen()),
+                          (route) => false,
+                        );
                         signUpController.postSignUpDetails();
                       } else {
                         Get.snackbar("Error", "Please fill all the fields");
