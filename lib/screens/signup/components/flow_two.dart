@@ -22,7 +22,6 @@ class _SignUpTwoState extends State<SignUpTwo> {
   SignUpController signUpController = Get.put(SignUpController());
   FlowController flowController = Get.put(FlowController());
 
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -180,7 +179,6 @@ class _SignUpTwoState extends State<SignUpTwo> {
                             MaterialPageRoute(
                                 builder: (context) => const HomeScreen()));
                         signUpController.postSignUpDetails();
-
                       } else {
                         Get.snackbar("Error", "Please fill all the fields");
                       }
