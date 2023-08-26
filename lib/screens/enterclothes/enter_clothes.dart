@@ -13,6 +13,7 @@ class EnterClothesScreen extends StatefulWidget {
 }
 
 class EnterClothesScreenState extends State<EnterClothesScreen> {
+  // instance class EnterClotheCore
   EnterClothesCore enterClothesCore = EnterClothesCore();
 
   @override
@@ -83,7 +84,7 @@ class EnterClothesScreenState extends State<EnterClothesScreen> {
 
   Future<void> imagePickUILevel(int i) async {
     await Future.delayed(const Duration(milliseconds: 0))
-        .then((value) async => await enterClothesCore.imagePicker(1))
+        .then((value) async => await enterClothesCore.imagePicker(i))
         .then((value) => setState(() {}))
         .then((value) async =>
             await enterClothesCore.callApi(enterClothesCore.img!))

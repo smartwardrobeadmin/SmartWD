@@ -120,10 +120,10 @@ class EnterClothesCore {
     /// color analysis
     Color color = HexColor(hexColor ?? '#000000');
     var grayscale =
-        (0.299 * color.red) + (0.587 * color.green) + (0.114 * color.blue);
+        (0.299 * color.red) + (0.587 * color.green) + (0.114 * color.blue); // 225
 
-    result += (grayscale ~/ (2.25 * 5));
-    result += clothSwitchCase(type ?? 'Unknown');
+    result += (grayscale ~/ (2.25 * 5)); // 20%
+    result += clothSwitchCase(type ?? 'Unknown'); // 80%
     return result;
   }
 
