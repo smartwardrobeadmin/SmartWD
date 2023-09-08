@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:color_parser/color_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_wd/models/ai_model.dart';
 import 'package:smart_wd/screens/login/components/auth_page.dart';
@@ -150,7 +151,7 @@ class EnterClothesCore {
     clothesMap[imagePath] = {
       'imageUrl': imageUrl,
       'type': type,
-      'color': color,
+      'color': ColorParser.hex(color).toName(),
       'temp': temp,
     };
     await FirebaseFirestore.instance
