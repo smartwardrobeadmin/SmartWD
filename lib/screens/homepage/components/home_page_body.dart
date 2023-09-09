@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:color_parser/color_parser.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,17 +68,6 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
     if (mounted) {
       super.setState(fn);
     }
-  }
-
-  getColorName(String hex) async {
-    List hexList = (hex.split(''));
-    hexList.removeAt(0);
-    String hexString = hexList.join('');
-    debugPrint(hexString);
-    var response = await http.get(
-        Uri.parse("https://www.thecolorapi.com/id?hex=$hexString"),
-        headers: {"Content-Type": "application/json"});
-    return response.body;
   }
 
   @override
@@ -172,16 +158,6 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                                 itemCount: clothes.length,
                                 itemBuilder: (context, i) {
                                   Map item = clothes[i];
-                                  debugPrint(item['color'].toString());
-                                  debugPrint(ColorParser.hex(item['color'])
-                                      .toName()
-                                      .toString());
-                                  Future.delayed(
-                                          const Duration(milliseconds: 0))
-                                      .then((value) async => debugPrint(
-                                          jsonDecode((await getColorName(
-                                                  item['color'])))['name']
-                                              ['value']));
                                   return Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Container(
@@ -208,7 +184,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                                               ),
                                               const SizedBox(height: 12),
                                               Text(
-                                                "Color: ${ColorParser.hex(item['color']).toName()}",
+                                                "Color: ${item['color']}",
                                                 style: const TextStyle(
                                                     color: Colors.white),
                                               )

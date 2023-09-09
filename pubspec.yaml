@@ -33,7 +33,6 @@ dependencies:
   flutter:
     sdk: flutter
   google_fonts:
-  color_parser: ^0.0.3
   cloud_firestore:
   email_validator:
   file_picker:

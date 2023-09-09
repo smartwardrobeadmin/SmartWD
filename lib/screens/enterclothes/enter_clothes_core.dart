@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:color_parser/color_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_wd/models/ai_model.dart';
 import 'package:smart_wd/screens/login/components/auth_page.dart';
@@ -120,9 +119,13 @@ class EnterClothesCore {
 
     /// color analysis
     Color color = HexColor(hexColor ?? '#000000');
-    var grayscale =
-        (0.299 * color.red) + (0.587 * color.green) + (0.114 * color.blue); // 225
+    var grayscale = (0.299 * color.red) +
+        (0.587 * color.green) +
+        (0.114 * color.blue); // 225
 
+    if (type == 'Thawb') {
+      return (grayscale ~/ (2.25));
+    }
     result += (grayscale ~/ (2.25 * 5)); // 20%
     result += clothSwitchCase(type ?? 'Unknown'); // 80%
     return result;
@@ -151,7 +154,7 @@ class EnterClothesCore {
     clothesMap[imagePath] = {
       'imageUrl': imageUrl,
       'type': type,
-      'color': ColorParser.hex(color).toName(),
+      'color': await getColorName(color),
       'temp': temp,
     };
     await FirebaseFirestore.instance
@@ -160,6 +163,20 @@ class EnterClothesCore {
         .update({
       'clothes': clothesMap,
     });
+  }
+
+  Future<String> getColorName(String hex) async {
+    List hexList = (hex.split(''));
+    hexList.removeAt(0);
+    String hexString = hexList.join('');
+    debugPrint(hexString);
+    var response = await http.get(
+        Uri.parse("https://www.thecolorapi.com/id?hex=$hexString"),
+        headers: {"Content-Type": "application/json"});
+
+    Map decodedBody = jsonDecode(response.body);
+
+    return decodedBody['name']['value'];
   }
 
   Future<void> imagePicker(int a) async {
