@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:get/get.dart';
 import 'package:smart_wd/constants/colors.dart';
+import 'package:smart_wd/screens/get_clothes/get_clothes.dart';
 import 'package:smart_wd/screens/login/components/auth_page.dart';
 import 'package:smart_wd/screens/login/components/sign_out.dart';
 import '../../../screens/enterclothes/enter_clothes.dart';
@@ -223,7 +224,12 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                 buttonText: 'Enter New Clothes',
               ),
               MyButton2(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (builder) => const GetClothes()));
+                },
                 buttonText: 'Get Clothes',
               ),
               MyButton2(
