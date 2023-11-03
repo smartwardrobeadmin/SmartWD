@@ -183,10 +183,10 @@ class EnterClothesCore {
     txt1 = "";
     debugPrint("Image Picker Activated");
     if (a == 0) {
-      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.camera);
+      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 50,maxHeight: 324, maxWidth: 324);
       img = File(xImg!.path);
     } else {
-      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.gallery);
+      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.gallery,imageQuality: 50, maxHeight: 324, maxWidth: 324);
       img = File(xImg!.path);
     }
 
