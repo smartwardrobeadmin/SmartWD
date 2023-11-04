@@ -76,7 +76,7 @@ class EnterClothesCore {
     var stream = http.ByteStream(DelegatingStream.typed(imageFile.openRead()));
     var length = await imageFile.length();
 
-    String base = "https://smartwd-model.onrender.com";
+    String base = "https://smartwardrobe-zh3w.onrender.com";
 
     var uri = Uri.parse('$base/analyze');
     debugPrint('making request');
