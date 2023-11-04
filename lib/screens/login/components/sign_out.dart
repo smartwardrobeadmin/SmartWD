@@ -14,12 +14,12 @@ Future<void> signUserOut(BuildContext context) async {
   // dbRef.child('lock').child('lock_state').set(true);
   dbRef
       .child('sanitizers')
-      .child('sanitizer_16')
+      .child('sanitizer1')
       .child('sanitizer_state')
       .set(true);
   dbRef
       .child('sanitizers')
-      .child('sanitizer_20')
+      .child('sanitizer2')
       .child('sanitizer_state')
       .set(true);
   FirebaseAuth.instance.signOut();
