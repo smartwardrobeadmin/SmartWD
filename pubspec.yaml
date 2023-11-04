@@ -47,6 +47,8 @@ dependencies:
   path:
   async:
   shared_preferences:
+  form_builder_validators: ^9.1.0
+  firebase_database: ^10.3.3
 
 
   # The following adds the Cupertino Icons font to your application.

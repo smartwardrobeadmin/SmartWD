@@ -92,7 +92,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
               )),
           actions: [
             IconButton(
-                onPressed: () => signUserOut(context),
+                onPressed: () async => await signUserOut(context),
                 icon: const Icon(Icons.exit_to_app))
           ],
           bottom: AppBar(

@@ -1,5 +1,6 @@
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,7 +25,15 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailController.text, password: passwordController.text);
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (builder)=> HomeScreen()), (route) => false,);
+      final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+      dbRef.child('lock').child('lock_state').set(false);
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (builder) => const HomeScreen()),
+          (route) => false,
+        );
+      }
     } on FirebaseAuthException catch (e) {
       Get.snackbar('Error Happened', e.code);
     }
@@ -78,7 +87,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                         scale: 1,
                       )),
                   Container(
-                    height: size.height * (5/7),
+                    height: size.height * (5 / 7),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: HexColor("#ffffff"),
@@ -117,7 +126,8 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                   prefixIcon: const Icon(Icons.mail_outline),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(8, 0, 0, 0),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8, 0, 0, 0),
                                   child: Text(
                                     _errorMessage,
                                     style: GoogleFonts.poppins(
@@ -156,7 +166,8 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                   height: 12,
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(35, 0, 0, 0),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(35, 0, 0, 0),
                                   child: Row(
                                     children: [
                                       Text("Don't have an account?",

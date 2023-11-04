@@ -33,7 +33,7 @@ class EnterClothesScreenState extends State<EnterClothesScreen> {
               )),
           actions: [
             IconButton(
-                onPressed: () => signUserOut(context),
+                onPressed: () async =>await  signUserOut(context),
                 icon: const Icon(Icons.exit_to_app))
           ]),
       body: Center(

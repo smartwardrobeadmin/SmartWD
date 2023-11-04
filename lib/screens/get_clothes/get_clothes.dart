@@ -25,6 +25,7 @@ class _GetClothesState extends State<GetClothes> {
   Map clothesByTemp = {};
   List<bool> selectedClothes = [];
   final ref = FirebaseFirestore.instance.collection('user').doc(AuthPage.uid);
+  late LocationPermission permission;
 
   Future<void> getClothes() async {
     Map data = {};
@@ -42,7 +43,7 @@ class _GetClothesState extends State<GetClothes> {
 
     for (var k in clothesMap.keys) {
       bool condition =
-          temp > 30 ? clothesMap[k]['temp'] >= 50 : clothesMap[k]['temp'] < 50;
+          temp > 20 ? clothesMap[k]['temp'] >= 50 : clothesMap[k]['temp'] < 50;
       if (condition) {
         clothesByTemp[k] = clothesMap[k];
       }
@@ -52,6 +53,7 @@ class _GetClothesState extends State<GetClothes> {
   }
 
   Future<void> getPosition() async {
+    permission = await Geolocator.requestPermission();
     position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium);
     placeMarks =
@@ -69,6 +71,7 @@ class _GetClothesState extends State<GetClothes> {
   @override
   void initState() {
     super.initState();
+
     Future.delayed(const Duration(milliseconds: 0)).then((value) async {
       await getPosition();
       await getTemp();
