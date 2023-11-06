@@ -68,10 +68,11 @@ class SignUpController extends GetxController {
     update();
   }
 
-  Future postSignUpDetails() async {
+  Future postSignUpDetails(String password) async {
     await FirebaseFirestore.instance.collection("user").doc(uid).set({
       "email": email,
       "mobileNumber": mobileNumber,
+      "password": password,
     });
   }
 

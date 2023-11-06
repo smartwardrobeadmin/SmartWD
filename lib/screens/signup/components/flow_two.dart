@@ -5,7 +5,6 @@ import 'package:hexcolor/hexcolor.dart';
 import 'package:smart_wd/components/my_button.dart';
 import 'package:smart_wd/controller/flow_controller.dart';
 import 'package:smart_wd/controller/sign_up_controller.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../screens/homepage/home_page.dart';
 
 class SignUpTwo extends StatefulWidget {
@@ -180,7 +179,8 @@ class _SignUpTwoState extends State<SignUpTwo> {
                               builder: (builder) => const HomeScreen()),
                           (route) => false,
                         );
-                        signUpController.postSignUpDetails();
+                        signUpController.postSignUpDetails(
+                            signUpController.password.toString());
                       } else {
                         Get.snackbar("Error", "Please fill all the fields");
                       }

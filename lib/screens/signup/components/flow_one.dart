@@ -126,13 +126,10 @@ class _SignUpOneState extends State<SignUpOne> {
                         signUpController.setMobileNumber(value);
                       },
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      // onSubmitted: (value) {
-                      //   signUpController.setMobileNumber(value);
-                      // },
                       validator: FormBuilderValidators.compose([
                         FormBuilderValidators.required(),
-                        FormBuilderValidators.match(r'^\+965[569]\d{7}$',
-                            errorText: 'example of valid'),
+                        FormBuilderValidators.numeric(
+                            errorText: 'not a valid Phone Number'),
                       ]),
                       controller: mobileNumberController.value,
                       keyboardType: TextInputType.number,
@@ -183,7 +180,8 @@ class _SignUpOneState extends State<SignUpOne> {
                         FormBuilderValidators.required(),
                         FormBuilderValidators.match(
                           r'^(?=.*?[a-z])(?=.*?[0-9]).{6,}$',
-                          errorText: 'Password must contain string and numbers and 6 haracters length',
+                          errorText:
+                              'Password must contain string and numbers and 6 haracters length',
                         ),
                       ]),
                       decoration: InputDecoration(
@@ -257,7 +255,8 @@ class _SignUpOneState extends State<SignUpOne> {
                             debugPrint(isRegistered.toString());
                             if (isRegistered) {
                               Get.snackbar("Success", "User Registered");
-                              signUpController.postSignUpDetails();
+                              signUpController.postSignUpDetails(
+                                  signUpController.password.toString());
                               if (context.mounted) {
                                 Navigator.pushAndRemoveUntil(
                                   context,
