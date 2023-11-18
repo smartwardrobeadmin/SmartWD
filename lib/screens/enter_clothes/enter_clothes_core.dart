@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_wd/models/ai_model.dart';
 import 'package:smart_wd/screens/login/components/auth_page.dart';
@@ -21,8 +22,18 @@ class EnterClothesCore {
 
   String imagePath = '';
   String imageUrl = '';
+  List hangers = [];
+  int selectedHanger = 0;
+
   String txt = "";
   String txt1 = "Upload or take an image";
+  List clothesDestinations = [];
+  AnalyzeModel responseTxt = AnalyzeModel();
+  final DatabaseReference dbRef = FirebaseDatabase.instance
+      .ref()
+      .child('devices')
+      .child('e4:5f:01:f5:f7:b8')
+      .child('switch_data');
   List responsesResults = [
     "T-Shirt", // 60%
     "Longsleeve", // 50%
@@ -70,8 +81,36 @@ class EnterClothesCore {
         }));
   }
 
+  Future fetchDesOptions() async {
+    final QuerySnapshot<Map<String, dynamic>> ref =
+        await (FirebaseFirestore.instance.collection('clothes_des')).get();
+    clothesDestinations = ref.docs[0].data()['destinations'];
+    debugPrint(clothesDestinations.toString());
+  }
+
+  Future<void> fetchHangers() async {
+    DataSnapshot data1 = await dbRef.child('switch1').child('is_pressed').get();
+    DataSnapshot data2 = await dbRef.child('switch2').child('is_pressed').get();
+    DataSnapshot data3 = await dbRef.child('switch3').child('is_pressed').get();
+    // debugPrint(data1.value.toString());
+    // debugPrint(data2.value.toString());
+    // debugPrint(data3.value.toString());
+    if (data1.value == false) {
+      hangers.add(1);
+    }
+    if (data2.value == false) {
+      hangers.add(2);
+    }
+    if (data3.value == false) {
+      hangers.add(3);
+    }
+    if (hangers.isNotEmpty) {
+      selectedHanger = hangers[0];
+    }
+  }
+
 // The function which will upload the image as a file
-  Future<void> callApi(File imageFile) async {
+  Future<http.StreamedResponse> callApi(File imageFile) async {
     // ignore: deprecated_member_use
     var stream = http.ByteStream(DelegatingStream.typed(imageFile.openRead()));
     var length = await imageFile.length();
@@ -90,28 +129,29 @@ class EnterClothesCore {
     var response = await request.send();
     debugPrint(response.statusCode.toString());
 
-    await streamToStorage(imageFile, response);
+    response.stream.transform(utf8.decoder).listen((value) async {
+      debugPrint(value);
+      // int l = value.length;
+      responseTxt = AnalyzeModel.fromJson(jsonDecode(value));
+      txt = 'Type: ${responseTxt.result}\nColor: ${responseTxt.color}';
+    });
+
+    return response;
   }
 
-  Future<void> streamToStorage(
-      File imageFile, http.StreamedResponse response) async {
-    await uploadToStorage(imageFile).then((value) =>
-        response.stream.transform(utf8.decoder).listen((value) async {
-          debugPrint(value);
-          // int l = value.length;
-          AnalyzeModel responseTxt = AnalyzeModel.fromJson(jsonDecode(value));
-          txt = 'Type: ${responseTxt.result}\nColor: ${responseTxt.color}';
-
-          await createDataInFireStore(
-              imagePath: imagePath,
-              imageUrl: imageUrl,
-              type: responseTxt.result ?? 'Unknown',
-              color: responseTxt.color ?? '#000000',
-              temp: tempCalc(
-                responseTxt.color,
-                responseTxt.result,
-              ));
-        }));
+  Future<void> streamToStorage(File imageFile, http.StreamedResponse response,
+      String destination) async {
+    await uploadToStorage(imageFile)
+        .then((value) async => await createDataInFireStore(
+            imagePath: imagePath,
+            imageUrl: imageUrl,
+            type: responseTxt.result ?? 'Unknown',
+            color: responseTxt.color ?? '#000000',
+            destination: destination,
+            temp: tempCalc(
+              responseTxt.color,
+              responseTxt.result,
+            )));
   }
 
   int tempCalc(String? hexColor, String? type) {
@@ -124,17 +164,22 @@ class EnterClothesCore {
         (0.114 * color.blue); // 225
 
     if (type == 'Thawb') {
-      return (grayscale ~/ (2.25));
+      return ((grayscale ~/ (2.25)) - 20) < 5 ? 5 : (grayscale ~/ (2.25)) - 20;
     }
     result += (grayscale ~/ (2.25 * 5)); // 20%
     result += clothSwitchCase(type ?? 'Unknown'); // 80%
     return result;
   }
 
+  Future<void> fillTheHanger() async {
+    await dbRef.child('switch$selectedHanger').child('is_pressed').set(true);
+  }
+
   Future<void> createDataInFireStore({
     required String imagePath,
     required String imageUrl,
     required String type,
+    required String destination,
     required String color,
     required int temp,
   }) async {
@@ -155,7 +200,11 @@ class EnterClothesCore {
       'imageUrl': imageUrl,
       'type': type,
       'color': await getColorName(color),
+      'destination': destination,
       'temp': temp,
+      'path': imagePath,
+      'isGet': false,
+      'Hanger': selectedHanger,
     };
     await FirebaseFirestore.instance
         .collection('user')
@@ -163,6 +212,8 @@ class EnterClothesCore {
         .update({
       'clothes': clothesMap,
     });
+
+    await fillTheHanger();
   }
 
   Future<String> getColorName(String hex) async {
@@ -183,10 +234,18 @@ class EnterClothesCore {
     txt1 = "";
     debugPrint("Image Picker Activated");
     if (a == 0) {
-      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 50,maxHeight: 324, maxWidth: 324);
+      XFile? xImg = await ImagePicker().pickImage(
+          source: ImageSource.camera,
+          imageQuality: 50,
+          maxHeight: 324,
+          maxWidth: 324);
       img = File(xImg!.path);
     } else {
-      XFile? xImg = await ImagePicker().pickImage(source: ImageSource.gallery,imageQuality: 50, maxHeight: 324, maxWidth: 324);
+      XFile? xImg = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 50,
+          maxHeight: 324,
+          maxWidth: 324);
       img = File(xImg!.path);
     }
 
@@ -227,7 +286,7 @@ class EnterClothesCore {
       case "Hoodie": // 20%
         return 20;
       case "Thawb": // 50%
-        return 50;
+        return 60;
       case "Body": // 80%
         return 80;
       case 'Other': // 0%

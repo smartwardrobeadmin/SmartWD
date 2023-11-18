@@ -2,11 +2,15 @@ import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_wd/components/my_button.dart';
 import 'package:smart_wd/components/my_textfield.dart';
+import 'package:smart_wd/constants/colors.dart';
 import 'package:smart_wd/screens/homepage/home_page.dart';
 import 'package:smart_wd/screens/signup/sign_up.dart';
 
@@ -20,12 +24,50 @@ class LoginBodyScreen extends StatefulWidget {
 class _LoginBodyScreenState extends State<LoginBodyScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool canLoginWithBiometric = false;
+  bool isLoading = true;
 
-  void signUserIn() async {
+  static Future<bool> authenticateUser() async {
+    //initialize Local Authentication plugin.
+    final LocalAuthentication localAuthentication = LocalAuthentication();
+    //status of authentication.
+    bool isAuthenticated = false;
+    //check if device supports biometrics authentication.
+    bool isBiometricSupported = await localAuthentication.isDeviceSupported();
+    //check if user has enabled biometrics.
+    //check
+    bool canCheckBiometrics = await localAuthentication.canCheckBiometrics;
+
+    //if device supports biometrics and user has enabled biometrics, then authenticate.
+    if (isBiometricSupported && canCheckBiometrics) {
+      try {
+        Get.snackbar('Available Biometrics',
+            localAuthentication.getAvailableBiometrics().toString());
+        isAuthenticated = await localAuthentication.authenticate(
+            options: const AuthenticationOptions(biometricOnly: true),
+            localizedReason: 'Use Face ID to authenticate');
+      } on PlatformException catch (e) {
+        Get.snackbar('Error', e.toString());
+      }
+    }
+    return isAuthenticated;
+  }
+
+  Future checkLocalUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? email = prefs.getString('email');
+    canLoginWithBiometric = email != null;
+    setState(() {});
+  }
+
+  Future<void> signUserIn() async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailController.text, password: passwordController.text);
       final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('email', emailController.text);
+      prefs.setString('password', passwordController.text);
       dbRef.child('lock').child('lock_state').set(false);
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
@@ -36,6 +78,30 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
       }
     } on FirebaseAuthException catch (e) {
       Get.snackbar('Error Happened', e.code);
+    }
+  }
+
+  Future<void> signUserInBiometric() async {
+    if (await authenticateUser()) {
+      try {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: prefs.getString('email')!,
+            password: prefs.getString('password')!);
+        final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+        dbRef.child('lock').child('lock_state').set(false);
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (builder) => const HomeScreen()),
+            (route) => false,
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        Get.snackbar('Error Happened', e.code);
+      }
+    } else {
+      Get.snackbar('Not Authenticated', 'Biometric Issue');
     }
   }
 
@@ -68,6 +134,12 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
   }
 
   @override
+  void initState() {
+    checkLocalUser().then((value) => setState(() => isLoading = false));
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.sizeOf(context);
     return Container(
@@ -96,99 +168,131 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                         topRight: Radius.circular(40),
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(30, 20, 30, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(15, 0, 0, 20),
+                    child: isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.defaultYellow))
+                        : Padding(
+                            padding: const EdgeInsets.fromLTRB(30, 20, 30, 20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Email",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    color: HexColor("#8d8d8d"),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                MyTextField(
-                                  onChanged: (() {
-                                    validateEmail(emailController.text);
-                                  }),
-                                  controller: emailController,
-                                  hintText: "hello@gmail.com",
-                                  obscureText: false,
-                                  prefixIcon: const Icon(Icons.mail_outline),
-                                ),
                                 Padding(
                                   padding:
-                                      const EdgeInsets.fromLTRB(8, 0, 0, 0),
-                                  child: Text(
-                                    _errorMessage,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                Text(
-                                  "Password",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    color: HexColor("#8d8d8d"),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                MyTextField(
-                                  controller: passwordController,
-                                  hintText: "**************",
-                                  obscureText: true,
-                                  prefixIcon: const Icon(Icons.lock_outline),
-                                ),
-                                const SizedBox(
-                                  height: 20,
-                                ),
-                                MyButton(
-                                  onPressed: signUserIn,
-                                  buttonText: 'Login',
-                                ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 0, 0),
-                                  child: Row(
+                                      const EdgeInsets.fromLTRB(15, 0, 0, 20),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text("Don't have an account?",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 15,
-                                            color: HexColor("#8d8d8d"),
-                                          )),
-                                      TextButton(
+                                      Text(
+                                        "Email",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          color: HexColor("#8d8d8d"),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      MyTextField(
+                                        onChanged: (() {
+                                          validateEmail(emailController.text);
+                                        }),
+                                        controller: emailController,
+                                        hintText: "hello@gmail.com",
+                                        keyBoardType:
+                                            TextInputType.emailAddress,
+                                        obscureText: false,
+                                        prefixIcon:
+                                            const Icon(Icons.mail_outline),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            8, 0, 0, 0),
                                         child: Text(
-                                          "Register",
+                                          _errorMessage,
                                           style: GoogleFonts.poppins(
-                                            fontSize: 15,
-                                            color: HexColor("#44564a"),
+                                            fontSize: 12,
+                                            color: Colors.red,
                                           ),
                                         ),
-                                        onPressed: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const SignUpScreen(),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      Text(
+                                        "Password",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          color: HexColor("#8d8d8d"),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: MyTextField(
+                                              keyBoardType:
+                                                  TextInputType.visiblePassword,
+                                              controller: passwordController,
+                                              hintText: "**************",
+                                              obscureText: true,
+                                              prefixIcon: const Icon(
+                                                  Icons.lock_outline),
+                                            ),
                                           ),
+                                          Visibility(
+                                            visible: canLoginWithBiometric,
+                                            child: IconButton(
+                                                onPressed: () async =>
+                                                    signUserInBiometric(),
+                                                icon: const Icon(
+                                                  Icons.tag_faces_rounded,
+                                                  color:
+                                                      AppColors.defaultYellow,
+                                                )),
+                                          )
+                                        ],
+                                      ),
+                                      const SizedBox(
+                                        height: 20,
+                                      ),
+                                      MyButton(
+                                        onPressed: signUserIn,
+                                        buttonText: 'Login',
+                                      ),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            35, 0, 0, 0),
+                                        child: Row(
+                                          children: [
+                                            Text("Don't have an account?",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 15,
+                                                  color: HexColor("#8d8d8d"),
+                                                )),
+                                            TextButton(
+                                              child: Text(
+                                                "Register",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 15,
+                                                  color: HexColor("#44564a"),
+                                                ),
+                                              ),
+                                              onPressed: () => Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const SignUpScreen(),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -197,9 +301,6 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
                   ),
                   Transform.translate(
                     offset: const Offset(10, -100),

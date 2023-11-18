@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:smart_wd/constants/colors.dart';
 
 class MyButton extends StatelessWidget {
   final Function()? onPressed;
   final String buttonText;
-  const MyButton(
-      {super.key, required this.onPressed, required this.buttonText});
+  final Color color;
+
+  const MyButton({
+    super.key,
+    required this.onPressed,
+    required this.buttonText,
+    this.color = AppColors.mainColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +26,7 @@ class MyButton extends StatelessWidget {
           height: 55,
           width: 275,
           decoration: BoxDecoration(
-            color: HexColor('#F9A826'),
+            color: onPressed == null ? Colors.grey : color,
             borderRadius: BorderRadius.circular(30),
           ),
           child: Text(
