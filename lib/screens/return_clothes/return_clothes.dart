@@ -26,17 +26,30 @@ class _ReturnClothesState extends State<ReturnClothes> {
       .child('e4:5f:01:f5:f7:b8')
       .child('switch_data');
 
-  Future<bool> emptyHanger(Map item) async {
+  Future<int> emptyHanger(Map item) async {
+    List hangersNum = [1, 2, 3];
     bool isPressed =
         (await dbRef.child('switch${item['Hanger']}').child('is_pressed').get())
             .value! as bool;
+
     if (isPressed) {
-      Get.snackbar('Error', 'switch${item['Hanger']} is pressed');
-      return false;
+      hangersNum.remove(item['Hanger']);
+      debugPrint(hangersNum.toString());
+      for (var i in hangersNum) {
+        bool isPressed2 =
+            (await dbRef.child('switch$i').child('is_pressed').get()).value!
+                as bool;
+        if (isPressed2 == false) {
+          await dbRef.child('switch$i').child('is_pressed').set(true);
+          return i;
+        }
+      }
+      Get.snackbar('Error', 'All switches are pressed');
+      return 0;
     }
 
     await dbRef.child('switch${item['Hanger']}').child('is_pressed').set(true);
-    return true;
+    return item['Hanger'];
   }
 
   Future<void> getClothes() async {
@@ -195,22 +208,23 @@ class _ReturnClothesState extends State<ReturnClothes> {
                                           ),
                                         ],
                                       ),
-                                      Container(
-                                        height: 150,
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                            color: Colors.black87,
-                                            borderRadius:
-                                                BorderRadius.circular(16)),
-                                        child: Center(
-                                          child: Text(
-                                            item['Hanger'].toString(),
-                                            style: GoogleFonts.macondo(
-                                                color: Colors.white,
-                                                fontSize: 72),
-                                          ),
-                                        ),
-                                      ),
+                                      const SizedBox(width: 12),
+                                      // Container(
+                                      //   height: 150,
+                                      //   padding: const EdgeInsets.all(8),
+                                      //   decoration: BoxDecoration(
+                                      //       color: Colors.black87,
+                                      //       borderRadius:
+                                      //           BorderRadius.circular(16)),
+                                      //   child: Center(
+                                      //     child: Text(
+                                      //       item['Hanger'].toString(),
+                                      //       style: GoogleFonts.macondo(
+                                      //           color: Colors.white,
+                                      //           fontSize: 72),
+                                      //     ),
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                 ),
@@ -250,11 +264,13 @@ class _ReturnClothesState extends State<ReturnClothes> {
       if (selectedClothes[i] == true) {
         Map item = clothesGet[i];
         item['isGet'] = false;
-        clothesMap[item['path']] = item;
+
         var done = await emptyHanger(item);
-        if (done == false) {
+        if (done == 0) {
           return;
         }
+        item['Hanger'] = done;
+        clothesMap[item['path']] = item;
       }
     }
     await FirebaseFirestore.instance

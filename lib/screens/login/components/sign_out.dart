@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_wd/screens/login/components/auth_page.dart';
 
 Future<void> signUserOut(BuildContext context) async {
@@ -18,7 +17,7 @@ Future<void> signUserOut(BuildContext context) async {
     Get.snackbar('Error Happened', 'the switch lock is false');
     return;
   }
-  dbRef.child('lock').child('lock_state').set(true);
+  dbRef.child('lock').child('lock_state').set(false);
   // dbRef.child('perfume').child('perfume_state').set(true);
   dbRef
       .child('sanitizers')
@@ -35,6 +34,6 @@ Future<void> signUserOut(BuildContext context) async {
     Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (builder) => const AuthPage()),
-        (route) => false);
+            (route) => false);
   }
 }

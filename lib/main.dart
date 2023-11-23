@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Smart WD',
       theme: ThemeData().copyWith(
         colorScheme: ThemeData().colorScheme.copyWith(
               primary: HexColor("#8d8d8d"),

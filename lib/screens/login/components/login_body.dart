@@ -42,10 +42,12 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
     if (isBiometricSupported && canCheckBiometrics) {
       try {
         Get.snackbar('Available Biometrics',
-            localAuthentication.getAvailableBiometrics().toString());
+            (await localAuthentication.getAvailableBiometrics()).toString());
         isAuthenticated = await localAuthentication.authenticate(
+            // options: const AuthenticationOptions(biometricOnly: false),
             options: const AuthenticationOptions(biometricOnly: true),
-            localizedReason: 'Use Face ID to authenticate');
+            // localizedReason: 'Scan your fingerprint to authenticate');
+            localizedReason: 'Scan your Face ID to authenticate');
       } on PlatformException catch (e) {
         Get.snackbar('Error', e.toString());
       }
@@ -68,7 +70,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('email', emailController.text);
       prefs.setString('password', passwordController.text);
-      dbRef.child('lock').child('lock_state').set(false);
+      dbRef.child('lock').child('lock_state').set(true);
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -230,38 +232,55 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                       const SizedBox(
                                         height: 10,
                                       ),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: MyTextField(
-                                              keyBoardType:
-                                                  TextInputType.visiblePassword,
-                                              controller: passwordController,
-                                              hintText: "**************",
-                                              obscureText: true,
-                                              prefixIcon: const Icon(
-                                                  Icons.lock_outline),
-                                            ),
-                                          ),
-                                          Visibility(
-                                            visible: canLoginWithBiometric,
-                                            child: IconButton(
-                                                onPressed: () async =>
-                                                    signUserInBiometric(),
-                                                icon: const Icon(
-                                                  Icons.tag_faces_rounded,
-                                                  color:
-                                                      AppColors.defaultYellow,
-                                                )),
-                                          )
-                                        ],
+                                      MyTextField(
+                                        keyBoardType:
+                                            TextInputType.visiblePassword,
+                                        controller: passwordController,
+                                        hintText: "**************",
+                                        obscureText: true,
+                                        prefixIcon:
+                                            const Icon(Icons.lock_outline),
                                       ),
                                       const SizedBox(
                                         height: 20,
                                       ),
-                                      MyButton(
-                                        onPressed: signUserIn,
-                                        buttonText: 'Login',
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          Expanded(
+                                            child: MyButton(
+                                              onPressed: signUserIn,
+                                              buttonText: 'Login',
+                                            ),
+                                          ),
+                                          Visibility(
+                                            visible: canLoginWithBiometric,
+                                            child: CircleAvatar(
+                                              backgroundColor:
+                                                  AppColors.defaultYellow,
+                                              radius: 26,
+                                              child: CircleAvatar(
+                                                radius: 24,
+                                                backgroundColor: Colors.white,
+                                                child: Center(
+                                                  child: IconButton(
+                                                    onPressed: () async =>
+                                                        signUserInBiometric(),
+                                                    icon: const Icon(
+                                                      Icons.tag_faces_rounded,
+                                                      // Icons.fingerprint_rounded,
+                                                      size: 32,
+                                                      color: AppColors
+                                                          .defaultYellow,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       const SizedBox(
                                         height: 12,
@@ -304,12 +323,15 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                   ),
                   Transform.translate(
                     offset: const Offset(10, -100),
-                    child: Text(
-                      "Welcome back! Glad to see you, Again!",
-                      style: GoogleFonts.poppins(
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        "Welcome back! Glad to see you, Again!",
+                        style: GoogleFonts.poppins(
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
