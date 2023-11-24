@@ -14,7 +14,7 @@ Future<void> signUserOut(BuildContext context) async {
       .child('is_pressed')
       .get();
   if (data.value == false) {
-    Get.snackbar('Error Happened', 'the switch lock is false');
+    Get.snackbar('Error Happened', 'Please close the wardrobe door');
     return;
   }
   dbRef.child('lock').child('lock_state').set(false);
