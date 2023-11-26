@@ -26,6 +26,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
   final passwordController = TextEditingController();
   bool canLoginWithBiometric = false;
   bool isLoading = true;
+  final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
 
   static Future<bool> authenticateUser() async {
     //initialize Local Authentication plugin.
@@ -66,11 +67,10 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailController.text, password: passwordController.text);
-      final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('email', emailController.text);
       prefs.setString('password', passwordController.text);
-      dbRef.child('lock').child('lock_state').set(true);
+      await updateFirebase();
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -83,6 +83,20 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
     }
   }
 
+  Future<void> updateFirebase() async {
+    await dbRef.child('lock').child('lock_state').set(true);
+    await dbRef
+        .child('sanitizers')
+        .child('sanitizer1')
+        .child('sanitizer_state')
+        .set(false);
+    await dbRef
+        .child('sanitizers')
+        .child('sanitizer2')
+        .child('sanitizer_state')
+        .set(false);
+  }
+
   Future<void> signUserInBiometric() async {
     if (await authenticateUser()) {
       try {
@@ -90,8 +104,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
             email: prefs.getString('email')!,
             password: prefs.getString('password')!);
-        final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-        dbRef.child('lock').child('lock_state').set(false);
+        await updateFirebase();
         if (context.mounted) {
           Navigator.pushAndRemoveUntil(
             context,
